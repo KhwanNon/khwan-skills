@@ -1,16 +1,29 @@
 ---
 name: nextjs-expert
-description: Expert-level Next.js (App Router) and React engineering. Use when writing, reviewing, or structuring Next.js / React code — server vs client components, data fetching & caching, routing, Tailwind, performance, and project structure. Tuned for Next 15/16 + React 19.
+description: Expert-level Next.js (App Router) and React engineering mindset. Use when writing, reviewing, or structuring Next.js / React code — server vs client boundaries, data fetching & caching decisions, routing, performance, and project structure.
 ---
 
 # Next.js Expert (App Router)
 
-Senior-level judgment for Next.js App Router + React 19. Bias: **server-first, minimal client JS, explicit boundaries.** Pair with [web-dev-expert] for framework-agnostic frontend craft.
+Senior-level judgment for Next.js App Router + React. Bias: **server-first, minimal client JS, explicit boundaries.** This skill is the mindset for reasoning about those boundaries — not a guide to any specific library. Pair with [web-dev-expert] for framework-agnostic frontend craft.
+
+## What a Next.js Expert Values
+
+The lens to read everything below through. What separates expert work from "it renders":
+
+- **Server-first as a reflex.** The expert's default is the server; reaching for the client is a deliberate, justified decision, not the starting point. They feel the cost of every kilobyte shipped to the browser.
+- **Boundaries are the whole game.** Most Next.js bugs are boundary mistakes (where it runs, where data comes from, what's cached) — not syntax. An expert decides these *before* writing code and keeps the client boundary as small and deep as possible.
+- **Caching is an intentional decision, never a default you inherited.** For every fetch the expert can say *why* it's static, revalidated, or dynamic. "I'm not sure how this caches" is an unfinished thought.
+- **No waterfalls, stream the slow parts.** Independent data loads in parallel; slow content streams behind a boundary so the shell paints instantly. Perceived speed is designed, not hoped for.
+- **Secrets and server-only code never touch the client bundle.** This is a correctness/security line, not a preference.
+- **Co-location and a thin page.** The expert keeps code next to the route that uses it and promotes to shared scope only when reuse demands it — structure earns its complexity.
+
+**The bar for "expert-level work":** a production build that's clean; no `'use client'` higher than it needs to be; caching that's explicit and intentional per request; mutations that revalidate exactly what changed; no secrets reachable from the browser; fast first paint via streaming, not via shipping everything.
 
 ## Mental Model First
 
 Before writing code, decide three things:
-1. **Where does this run?** Server Component (default) or Client (`'use client'`)? Default to server.
+1. **Where does this run?** Server Component (default) or Client? Default to server.
 2. **Where does the data come from, and when?** Build time, request time, or client runtime?
 3. **What is the cache lifetime?** Static, revalidated (ISR), or dynamic?
 
@@ -18,85 +31,76 @@ If you can't answer these, stop and ask. Most Next.js mistakes are boundary mist
 
 ## The Server/Client Boundary (most important rule)
 
-- **Server Components are the default.** Keep `'use client'` as deep/leaf as possible. A page should be a server component that composes small client islands.
-- A client component **cannot** import a server component as a child, but it **can** receive one via `children`/props. Use this to keep interactivity isolated:
-  ```tsx
-  // page.tsx (server) — fetches data, passes server-rendered children in
-  <ClientShell><ServerContent /></ClientShell>
-  ```
-- Never put secrets, DB clients, or heavy deps in a file that has (or is imported by) `'use client'`. Mark server-only modules with `import 'server-only'`.
-- Push `useState`/`useEffect`/event handlers down into the smallest possible component. If a whole page is `'use client'` just for one button, you did it wrong.
+- **Server Components are the default.** Keep the client boundary as deep/leaf as possible. A page should be a server component that composes small client islands.
+- A client component **cannot** import a server component as a child, but it **can** receive one via `children`/props. Use this to keep interactivity isolated while server-rendered content flows through.
+- Never put secrets, DB clients, or heavy deps in a file that is (or is imported by) a client component. Keep server-only modules clearly marked so they can't leak into the client bundle.
+- Push interactive state and effects down into the smallest possible component. If a whole page is a client component just for one button, you did it wrong.
 
-## Data Fetching & Caching (Next 15/16)
+## Data Fetching & Caching
 
-- Fetch in **Server Components** with `async`/`await`. No `useEffect` for initial data.
-- In Next 15+, `fetch` is **uncached by default**. Be explicit:
-  - `fetch(url, { cache: 'force-cache' })` — static
-  - `fetch(url, { next: { revalidate: 60 } })` — ISR
-  - `fetch(url, { cache: 'no-store' })` — always dynamic
-- Use `next: { tags: [...] }` + `revalidateTag()` for on-demand invalidation after mutations.
-- **Mutations → Server Actions** (`'use server'`), not API routes, unless you need a public/3rd-party HTTP endpoint. After a mutation call `revalidatePath`/`revalidateTag`.
-- Parallelize independent fetches with `Promise.all`; don't create waterfalls. Co-locate fetches with the component that needs them and let Suspense stream.
-- `await cookies()`, `await headers()`, `await params`, `await searchParams` — these are **async** in Next 15+.
+- Fetch in **Server Components** with `async`/`await`. No client-side effect for initial data.
+- **Be explicit about caching.** Decide per request whether it's static, revalidated on an interval (ISR), or always dynamic — don't rely on defaults you haven't verified.
+- Use tag-based revalidation for on-demand invalidation after mutations.
+- **Mutations belong in server-side actions**, not ad-hoc API routes, unless you genuinely need a public/3rd-party HTTP endpoint. After a mutation, revalidate the affected paths/tags.
+- Parallelize independent fetches; don't create waterfalls. Co-locate fetches with the component that needs them and let streaming fill in slow parts.
+- Treat request-scoped inputs (cookies, headers, params, search params) as async — await them.
 
 ## Routing & Files
 
-- Route groups `(group)` organize without affecting the URL. Private folders `_folder` are excluded from routing — good for co-located `_components`, `_data`, `_lib`.
-- Use the special files deliberately: `loading.tsx` (Suspense fallback), `error.tsx` (must be `'use client'`), `not-found.tsx`, `layout.tsx` (persists across navigation, don't refetch per-page data here unless shared).
-- Prefer `<Link>` + `useRouter` from `next/navigation` (not `next/router`).
-- Stream slow content with `<Suspense>` boundaries so the shell paints instantly.
+- Route groups organize without affecting the URL. Private folders are excluded from routing — good for co-located components, data, and logic.
+- Use the framework's special files deliberately: loading fallback, error boundary (client-side), not-found, and layout (persists across navigation — don't refetch per-page data there unless it's genuinely shared).
+- Prefer the framework's navigation primitives over manual history manipulation.
+- Stream slow content behind suspense boundaries so the shell paints instantly.
 
-## React 19 Notes
+## React Notes
 
-- `use()` to unwrap promises/context in render. `useActionState` for form+action state. `useOptimistic` for instant UI on mutations. `useFormStatus` for pending state inside forms.
-- `ref` is now a normal prop — `forwardRef` is rarely needed.
-- Don't reach for `useMemo`/`useCallback` reflexively; React Compiler (when enabled) handles most. Memoize only measured hot paths.
+- Use the modern primitives for unwrapping promises/context, form+action state, optimistic UI, and pending state — instead of hand-rolled effects.
+- Treat refs as ordinary props where the version allows it.
+- Don't reach for memoization reflexively; the compiler handles most cases. Memoize only measured hot paths.
 
-## Styling (Tailwind 4 + framer-motion)
+## Styling
 
-- Tailwind 4 is CSS-first: config lives in `@theme` inside CSS, not `tailwind.config.js`. Define design tokens as CSS variables there.
-- Extract repeated class strings into a component, not a `@apply` soup. Use `clsx`/`cva` for conditional variants.
-- framer-motion components are client-only — wrap them in a leaf `'use client'` island, never make the whole page client just to animate.
+- Keep design tokens in one place (CSS variables); theme by swapping values, not duplicating rules.
+- Extract repeated class strings into a component, not a soup of inline directives. Use a small helper for conditional variants.
+- Animation libraries are client-only — wrap them in a leaf client island, never make the whole page client just to animate.
 
 ## Project Structure
 
-Your current layout (`app/(web)`, `app/modules`, `app/shared`) is sound. Reinforce it:
 ```
 app/
-  (web)/                 # route group: actual pages/routes
+  (group)/                # route group: actual pages/routes
     <route>/
-      page.tsx
+      page                # thin: fetch + compose
       _components/        # route-local UI (private folder)
       _data/              # route-local data/constants
       _lib/               # route-local logic
   modules/                # feature modules (cross-route domain logic)
-    <feature>/
-  shared/                 # truly shared: ui/, lib/, hooks/, types/
+  shared/                 # truly shared: ui, lib, hooks, types
 ```
 Rules of thumb:
-- **Co-locate first.** Code lives next to the route that uses it (`_components`). Promote to `modules/` only when a 2nd route needs it, to `shared/` only when it's domain-agnostic.
-- One barrel `index.ts` per module max; avoid deep re-export chains (they hurt tree-shaking and create cycles).
-- Keep `page.tsx` thin: fetch + compose. Logic in `_lib`, UI in `_components`.
+- **Co-locate first.** Code lives next to the route that uses it. Promote to a feature module only when a 2nd route needs it; promote to shared only when it's domain-agnostic.
+- One barrel per module max; avoid deep re-export chains (they hurt tree-shaking and create cycles).
+- Keep the page thin: fetch + compose. Logic in `_lib`, UI in `_components`.
 
 ## TypeScript Discipline
 
-- No `any`. Use `unknown` + narrowing at boundaries. Type API responses explicitly; don't trust `fetch` shapes.
-- Use `satisfies` for config objects to keep literal types. Derive types from a single source (`as const`, schema) instead of duplicating.
+- No `any`. Use `unknown` + narrowing at boundaries. Type external responses explicitly; don't trust fetched shapes.
+- Derive types from a single source instead of duplicating shapes.
 
 ## Anti-Patterns to Reject
 
-- `'use client'` at the top of a page/layout "to be safe" → cascades client-down.
-- `useEffect` + `fetch` for data a Server Component could load.
-- API route as a thin proxy to your own DB when a Server Action would do.
+- Marking a page/layout as a client component "to be safe" → cascades client-down.
+- A client-side effect fetching data a Server Component could load.
+- An API route that's just a thin proxy to your own DB when a server action would do.
 - Fetch waterfalls (sequential awaits that don't depend on each other).
 - Storing server state in client state and re-syncing manually.
-- `tailwind.config.js` theme edits in a Tailwind 4 project.
-- Giant barrel `index.ts` re-exporting everything.
+- Editing theme config in the wrong place for your styling setup.
+- A giant barrel re-exporting everything.
 
 ## Before Saying "Done"
 
-- [ ] `next build` passes (catches server/client violations, type errors).
-- [ ] No `'use client'` higher than necessary.
+- [ ] Production build passes (catches server/client violations, type errors).
+- [ ] No client boundary higher than necessary.
 - [ ] Caching is explicit and intentional per fetch.
 - [ ] Mutations revalidate the affected paths/tags.
 - [ ] No secrets reachable from client bundles.
