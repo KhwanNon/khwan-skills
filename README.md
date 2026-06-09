@@ -28,6 +28,7 @@ frontmatter to decide when to apply it — no manual activation needed.
 | **khwan-craft** | Default engineering mindset and code standard for all work — *best, but simplest*. Break big problems into small obvious parts, research several approaches, synthesize, then distill. |
 | **debugging-expert** | Debugging mindset for any bug, test failure, or crash — *find the cause, fix it once*. Reproduce, trace the bad value back to its source, prove it with one minimal test, fix at the source, then make the bug impossible. |
 | **git-commit-summary** | Generates a Conventional Commits message (English) plus a Thai bullet summary from the current changes. |
+| **adopt-role** | Adopt the top-of-field expert role for the current domain — Principal/Distinguished Engineer level at Google, Apple, Meta, AWS. Sets WHO you are before starting work. |
 | **flutter-expert** | Flutter engineering with Clean Architecture + BLoC — feature layering, GetIt DI, Dartz `Either`, Drift, go_router. Tuned to the `m_vara` stack. |
 | **mobile-dev-expert** | Cross-cutting mobile concerns — offline-first & sync, secure storage, lifecycle/background work, platform integration, permissions, on-device performance. |
 | **nextjs-expert** | Next.js (App Router) + React — server vs client components, data fetching & caching, routing, Tailwind, performance. Tuned for Next 15/16 + React 19. |
