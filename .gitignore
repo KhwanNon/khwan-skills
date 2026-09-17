@@ -5,3 +5,6 @@
 *.swp
 .idea/
 .vscode/
+
+# Skills synced from claude.ai (not hand-authored)
+synced/

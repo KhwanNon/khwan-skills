@@ -26,6 +26,7 @@ frontmatter to decide when to apply it — no manual activation needed.
 | Skill | What it does |
 | --- | --- |
 | **khwan-craft** | Default engineering mindset and code standard for all work — *best, but simplest*. Break big problems into small obvious parts, research several approaches, synthesize, then distill. |
+| **teach-mode** | How to explain anything — *steps that teach, not just instructions*. Ordered, runnable steps where each one says what it is, what it does, and why, using your real files, plus verification and the traps. |
 | **debugging-expert** | Debugging mindset for any bug, test failure, or crash — *find the cause, fix it once*. Reproduce, trace the bad value back to its source, prove it with one minimal test, fix at the source, then make the bug impossible. |
 | **git-commit-summary** | Generates a Conventional Commits message (English) plus a Thai bullet summary from the current changes. |
 | **adopt-role** | Adopt the top-of-field expert role for the current domain — Principal/Distinguished Engineer level at Google, Apple, Meta, AWS. Sets WHO you are before starting work. |
